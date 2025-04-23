@@ -1,0 +1,44 @@
+.bg-pattern {
+  background: linear-gradient(135deg, rgba(18, 18, 18, 0.95) 25%, transparent 25%) -64px 0,
+              linear-gradient(225deg, rgba(18, 18, 18, 0.95) 25%, transparent 25%) -64px 0,
+              linear-gradient(315deg, rgba(18, 18, 18, 0.95) 25%, transparent 25%),
+              linear-gradient(45deg, rgba(18, 18, 18, 0.95) 25%, transparent 25%);
+  background-size: 128px 128px;
+  background-color: rgba(18, 18, 18, 0.95);
+  background-position: center;
+  min-height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+
+/* Estilos para el contenedor principal */
+.container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Estilos para las notificaciones */
+.success-snackbar {
+  background: linear-gradient(to right, #4CAF50, #45a049);
+  color: white;
+  font-weight: 500;
+  padding: 16px;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.error-snackbar {
+  background: linear-gradient(to right, #f44336, #d32f2f);
+  color: white;
+  font-weight: 500;
+  padding: 16px;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

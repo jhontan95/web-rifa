@@ -1,0 +1,278 @@
+<!-- Hero Section with Logo -->
+<div class="min-h-screen overflow-y-auto h-full bg-pattern">
+  <!-- Navigation Bar -->
+  <nav class="bg-gradient-to-r from-black/80 to-purple-900/80 backdrop-blur-sm fixed w-full z-50" id="nav">
+    <div class="container mx-auto px-4 py-3">
+      <div class="flex justify-between items-center">
+        <!-- Logo -->
+        <div class="flex items-center">
+          <img src="assets/img/eduardo-gt-logo.png" alt="Eduardo GT Logo" class="h-14">
+        </div>
+        
+        <!-- Navigation Links -->
+        <div class="hidden md:flex space-x-8">
+          <a (click)="scrollToSection(productSection); $event.preventDefault()" 
+             class="text-white hover:text-purple-400 transition-colors text-lg font-medium cursor-pointer">
+            Producto
+          </a>
+          <a (click)="scrollToSection(ticketsSection); $event.preventDefault()" 
+             class="text-white hover:text-purple-400 transition-colors text-lg font-medium cursor-pointer">
+            Tickets
+          </a>
+          <a (click)="scrollToSection(bankSection); $event.preventDefault()" 
+             class="text-white hover:text-purple-400 transition-colors text-lg font-medium cursor-pointer">
+            Información Bancaria
+          </a>
+          <a (click)="scrollToSection(contactSection); $event.preventDefault()" 
+             class="text-white hover:text-purple-400 transition-colors text-lg font-medium cursor-pointer">
+            Comprar
+          </a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button mat-icon-button 
+                class="md:hidden text-white"
+                (click)="toggleMobileMenu()">
+          <mat-icon>menu</mat-icon>
+        </button>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="md:hidden" [class.hidden]="!isMobileMenuOpen">
+        <div class="pt-2 pb-3 space-y-1">
+          <a (click)="scrollToSection(productSection); closeMobileMenu(); $event.preventDefault()" 
+             class="block text-white hover:text-purple-400 transition-colors text-lg font-medium py-2 cursor-pointer">
+            Producto
+          </a>
+          <a (click)="scrollToSection(ticketsSection); closeMobileMenu(); $event.preventDefault()" 
+             class="block text-white hover:text-purple-400 transition-colors text-lg font-medium py-2 cursor-pointer">
+            Tickets
+          </a>
+          <a (click)="scrollToSection(bankSection); closeMobileMenu(); $event.preventDefault()" 
+             class="block text-white hover:text-purple-400 transition-colors text-lg font-medium py-2 cursor-pointer">
+            Información Bancaria
+          </a>
+          <a (click)="scrollToSection(contactSection); closeMobileMenu(); $event.preventDefault()" 
+             class="block text-white hover:text-purple-400 transition-colors text-lg font-medium py-2 cursor-pointer">
+            Comprar
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto px-6 py-8 max-w-7xl pt-24">
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center min-h-[400px]">
+      <div class="text-center">
+        <mat-spinner diameter="60" class="mx-auto mb-4"></mat-spinner>
+        <p class="text-white text-lg">Cargando datos de la rifa...</p>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="text-center py-8">
+      <p class="text-red-500 text-xl">{{ error }}</p>
+    </div>
+
+    <!-- Content -->
+    <ng-container *ngIf="!isLoading && !error && raffleData">
+      <!-- Product Section -->
+      <section #productSection class="mb-20 scroll-mt-20">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold mb-6 text-white">{{ raffleData.title }}</h2>
+          <div class="max-w-6xl mx-auto bg-card rounded-lg shadow-lg overflow-hidden bg-white border-4 border-purple-600">
+            <img [src]="raffleData.productImage" 
+                 [alt]="raffleData.title" 
+                 class="w-full h-[600px] object-cover">
+            <div class="p-6">
+              <p class="text-lg text-gray-700">{{ raffleData.description }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tickets Section -->
+      <section #ticketsSection class="mb-20 scroll-mt-20">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold mb-6 text-white">Tickets Disponibles</h2>
+          <div class="max-w-6xl mx-auto bg-card rounded-lg shadow-lg p-8 bg-white border-4 border-purple-600">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-6">
+                <p class="text-2xl font-semibold text-purple-900">Precio por ticket: ${{ TICKET_PRICE }}</p>
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Cantidad de tickets</mat-label>
+                  <input matInput type="number" min="1" [max]="MAX_TICKETS" [(ngModel)]="ticketQuantity" (ngModelChange)="calculateTotal()">
+                </mat-form-field>
+                <!-- Botones de selección rápida -->
+                <div class="flex flex-wrap gap-3 justify-center mt-4">
+                  <button mat-raised-button 
+                          class="px-6 py-3 bg-gradient-to-r from-purple-900 to-red-600 text-white rounded-lg hover:from-purple-800 hover:to-red-500 text-lg"
+                          (click)="addTickets(3)">
+                    +3
+                  </button>
+                  <button mat-raised-button 
+                          class="px-6 py-3 bg-gradient-to-r from-purple-900 to-red-600 text-white rounded-lg hover:from-purple-800 hover:to-red-500 text-lg"
+                          (click)="addTickets(10)">
+                    +10
+                  </button>
+                  <button mat-raised-button 
+                          class="px-6 py-3 bg-gradient-to-r from-purple-900 to-red-600 text-white rounded-lg hover:from-purple-800 hover:to-red-500 text-lg"
+                          (click)="addTickets(20)">
+                    +20
+                  </button>
+                  <button mat-raised-button 
+                          class="px-6 py-3 bg-gradient-to-r from-purple-900 to-red-600 text-white rounded-lg hover:from-purple-800 hover:to-red-500 text-lg"
+                          (click)="addTickets(50)">
+                    +50
+                  </button>
+                  <button mat-raised-button 
+                          class="px-6 py-3 bg-gradient-to-r from-purple-900 to-red-600 text-white rounded-lg hover:from-purple-800 hover:to-red-500 text-lg"
+                          (click)="addTickets(100)">
+                    +100
+                  </button>
+                </div>
+              </div>
+              <div class="flex items-center justify-center">
+                <div class="text-center">
+                  <p class="text-xl mb-2 text-purple-900">Total a pagar:</p>
+                  <p class="text-4xl font-bold text-red-600">${{ totalAmount }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bank Information Section -->
+      <section #bankSection class="mb-20 scroll-mt-20">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold mb-6 text-white">Información Bancaria</h2>
+          
+          <!-- Botones de bancos usando Material -->
+          <mat-button-toggle-group class="flex justify-center mb-8 gap-6" 
+                                  [value]="selectedBankIndex"
+                                  (change)="selectBank($event.value)">
+            <mat-button-toggle *ngFor="let bank of banks; let i = index" 
+                              [value]="i"
+                              class="min-w-[180px] bg-white border-2 border-purple-600">
+              <div class="p-6">
+                <img [src]="bank.logo" 
+                     [alt]="bank.name" 
+                     class="h-16 w-auto mx-auto mb-3">
+                <span class="block text-base font-medium text-purple-900">{{ bank.name }}</span>
+              </div>
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+
+          <!-- Información del banco seleccionado usando Material Card -->
+          <mat-card class="max-w-6xl mx-auto border-4 border-purple-600">
+            <mat-card-header class="justify-center py-4 bg-gradient-to-r from-purple-900 to-red-600">
+              <img mat-card-avatar [src]="banks[selectedBankIndex].logo" 
+                   [alt]="banks[selectedBankIndex].name"
+                   class="h-20 w-auto">
+              <mat-card-title class="text-2xl mb-4 mt-2 text-white">
+                {{ banks[selectedBankIndex].name }}
+              </mat-card-title>
+            </mat-card-header>
+            
+            <mat-card-content class="px-8 pb-8">
+              <mat-divider class="mb-8"></mat-divider>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="text-left">
+                  <p class="text-base text-gray-600">Tipo de cuenta</p>
+                  <p class="text-xl font-medium text-purple-900">{{ banks[selectedBankIndex].accountType }}</p>
+                </div>
+                <div class="text-left">
+                  <p class="text-base text-gray-600">Número de cuenta</p>
+                  <p class="text-xl font-medium text-purple-900">{{ banks[selectedBankIndex].accountNumber }}</p>
+                </div>
+                <div class="text-left">
+                  <p class="text-base text-gray-600">Titular</p>
+                  <p class="text-xl font-medium text-purple-900">{{ banks[selectedBankIndex].accountHolder }}</p>
+                </div>
+                <div class="text-left">
+                  <p class="text-base text-gray-600">Moneda</p>
+                  <p class="text-xl font-medium text-purple-900">{{ banks[selectedBankIndex].currency }}</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </section>
+
+      <!-- Contact Form Section -->
+      <section #contactSection class="mb-20 scroll-mt-20">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold mb-6 text-white">Formulario de Compra</h2>
+          <div class="max-w-6xl mx-auto bg-card rounded-lg shadow-lg p-8 bg-white border-4 border-purple-600">
+            <form [formGroup]="purchaseForm" (ngSubmit)="onSubmit()" class="space-y-6">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Nombre completo</mat-label>
+                <input matInput formControlName="fullName" required class="text-lg">
+                <mat-error *ngIf="purchaseForm.get('fullName')?.hasError('required')">
+                  El nombre es requerido
+                </mat-error>
+                <mat-error *ngIf="purchaseForm.get('fullName')?.hasError('minlength')">
+                  El nombre debe tener al menos 3 caracteres
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Correo electrónico</mat-label>
+                <input matInput formControlName="email" type="email" required class="text-lg">
+                <mat-error *ngIf="purchaseForm.get('email')?.hasError('required')">
+                  El correo es requerido
+                </mat-error>
+                <mat-error *ngIf="purchaseForm.get('email')?.hasError('email')">
+                  Ingrese un correo válido
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Número de teléfono</mat-label>
+                <input matInput formControlName="phone" required class="text-lg">
+                <mat-error *ngIf="purchaseForm.get('phone')?.hasError('required')">
+                  El teléfono es requerido
+                </mat-error>
+                <mat-error *ngIf="purchaseForm.get('phone')?.hasError('pattern')">
+                  Ingrese un número de teléfono válido
+                </mat-error>
+              </mat-form-field>
+
+              <div class="space-y-3">
+                <p class="text-left text-lg font-medium text-purple-900">Comprobante de pago</p>
+                <input type="file" 
+                       class="hidden" 
+                       #fileInput 
+                       (change)="onFileSelected($event)"
+                       accept="image/*">
+                <button 
+                  type="button"
+                  mat-stroked-button 
+                  color="primary" 
+                  class="w-full py-4 text-lg border-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                  (click)="fileInput.click()">
+                  <mat-icon svgIcon="mat:upload"></mat-icon>
+                  Subir comprobante
+                </button>
+                <p *ngIf="selectedFile" class="text-base text-gray-500">
+                  Archivo seleccionado: {{ selectedFile.name }}
+                </p>
+              </div>
+
+              <button 
+                mat-flat-button 
+                color="primary" 
+                class="w-full py-4 text-lg bg-gradient-to-r from-purple-900 to-red-600 hover:from-purple-800 hover:to-red-500" 
+                type="submit"
+                [disabled]="purchaseForm.invalid || !selectedFile">
+                Enviar formulario
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</div>
