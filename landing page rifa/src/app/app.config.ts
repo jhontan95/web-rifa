@@ -10,12 +10,20 @@ import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatNativeDateModule } from '@angular/material/core';
-import { provideIcons } from './core/icons/icons.provider';
-import { provideLuxon } from './core/luxon/luxon.provider';
 import { provideVex } from '@vex/vex.provider';
-import { provideNavigation } from './core/navigation/navigation.provider';
 import { vexConfigs } from '@vex/config/vex-configs';
 import { provideQuillConfig } from 'ngx-quill';
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { environment } from 'src/environments/environment';
+import { getStorage } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
+
+// Inicializar Firebase
+const app = initializeApp(environment.firebaseConfig);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+export const auth = getAuth(app);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -27,7 +35,6 @@ export const appConfig: ApplicationConfig = {
     ),
     provideRouter(
       appRoutes,
-      // TODO: Add preloading withPreloading(),
       withInMemoryScrolling({
         anchorScrolling: 'enabled',
         scrollPositionRestoration: 'enabled'
@@ -35,7 +42,6 @@ export const appConfig: ApplicationConfig = {
     ),
     provideAnimations(),
     provideHttpClient(withInterceptorsFromDi()),
-
     provideVex({
       /**
        * The config that will be used by default.
@@ -73,18 +79,23 @@ export const appConfig: ApplicationConfig = {
         }
       ]
     }),
-    provideNavigation(),
-    provideIcons(),
-    provideLuxon(),
     provideQuillConfig({
       modules: {
         toolbar: [
           ['bold', 'italic', 'underline', 'strike'],
           ['blockquote', 'code-block'],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          [{ header: [1, 2, 3, 4, 5, 6, false] }],
+          [{ 'header': 1 }, { 'header': 2 }],
+          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+          [{ 'script': 'sub' }, { 'script': 'super' }],
+          [{ 'indent': '-1' }, { 'indent': '+1' }],
+          [{ 'direction': 'rtl' }],
+          [{ 'size': ['small', false, 'large', 'huge'] }],
+          [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+          [{ 'color': [] }, { 'background': [] }],
+          [{ 'font': [] }],
+          [{ 'align': [] }],
           ['clean'],
-          ['link', 'image']
+          ['link', 'image', 'video']
         ]
       }
     })

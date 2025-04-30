@@ -1,43 +1,62 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-export interface PurchaseFormData {
-  fullName: string;
-  email: string;
-  phone: string;
-  ticketQuantity: number;
-  totalAmount: number;
-  selectedBank: string;
-  paymentProof: File;
-}
+import { db, storage } from 'src/app/app.config';
+import { collection, addDoc, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Observable, from, throwError } from 'rxjs';
+import { map, switchMap, catchError } from 'rxjs/operators';
+import { Purchase, PurchaseStatus } from '../../models/purchase';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PurchaseService {
-  // Aquí puedes cambiar la URL por tu endpoint real
-  private apiUrl = 'https://api.ejemplo.com/purchases';
+  private readonly COLLECTION_NAME = 'purchases';
+  private readonly STORAGE_PATH = 'payment-proofs';
 
-  constructor(private http: HttpClient) { }
+  constructor() { }
 
-  submitPurchase(formData: PurchaseFormData): Observable<any> {
-    // Crear un FormData para enviar el archivo
-    const formDataToSend = new FormData();
-    formDataToSend.append('fullName', formData.fullName);
-    formDataToSend.append('email', formData.email);
-    formDataToSend.append('phone', formData.phone);
-    formDataToSend.append('ticketQuantity', formData.ticketQuantity.toString());
-    formDataToSend.append('totalAmount', formData.totalAmount.toString());
-    formDataToSend.append('selectedBank', formData.selectedBank);
-    formDataToSend.append('paymentProof', formData.paymentProof);
+  submitPurchase(formData: Omit<Purchase, 'id' | 'paymentProof' | 'status' | 'createdAt'>): Observable<string> {
+    const purchaseData = {
+      ...formData,
+      createdAt: new Date(),
+      status: PurchaseStatus.PENDING,
+      paymentProof: '' // Inicialmente vacío, se actualizará después de subir la imagen
+    };
 
-    // Enviar la solicitud POST
-    return this.http.post(this.apiUrl, formDataToSend);
+    return from(addDoc(collection(db, this.COLLECTION_NAME), purchaseData)).pipe(
+      map(docRef => docRef.id),
+      catchError(error => {
+        console.error('Error al crear la compra:', error);
+        return throwError(() => new Error('Error al crear la compra'));
+      })
+    );
+  }
+
+  uploadPaymentProof(purchaseId: string, file: File): Observable<string> {
+    const filePath = `${this.STORAGE_PATH}/${purchaseId}/${file.name}`;
+    const storageRef = ref(storage, filePath);
+
+    return from(uploadBytes(storageRef, file)).pipe(
+      switchMap(snapshot => from(getDownloadURL(snapshot.ref))),
+      switchMap(url => {
+        const purchaseRef = doc(db, this.COLLECTION_NAME, purchaseId);
+        return from(updateDoc(purchaseRef, { paymentProof: url })).pipe(
+          map(() => url),
+          catchError(error => {
+            console.error('Error al actualizar la compra con la URL del archivo:', error);
+            return throwError(() => new Error('Error al actualizar la compra con la URL del archivo'));
+          })
+        );
+      }),
+      catchError(error => {
+        console.error('Error al subir el archivo:', error);
+        return throwError(() => new Error('Error al subir el archivo'));
+      })
+    );
   }
 
   // Método para validar el formulario
-  validateForm(formData: PurchaseFormData): string[] {
+  validateForm(formData: Omit<Purchase, 'id' | 'paymentProof' | 'status' | 'createdAt'>): string[] {
     const errors: string[] = [];
 
     if (!formData.fullName || formData.fullName.trim().length < 3) {
@@ -54,10 +73,6 @@ export class PurchaseService {
 
     if (!formData.ticketQuantity || formData.ticketQuantity < 1) {
       errors.push('La cantidad de tickets debe ser mayor a 0');
-    }
-
-    if (!formData.paymentProof) {
-      errors.push('Debe subir un comprobante de pago');
     }
 
     return errors;

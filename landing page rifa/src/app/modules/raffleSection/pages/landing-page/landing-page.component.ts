@@ -11,11 +11,14 @@ import { MatDividerModule } from '@angular/material/divider';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { PurchaseService, PurchaseFormData } from '../../shared/services/purchase.service';
-import { RaffleService, RaffleData } from '../../shared/services/raffle.service';
+import { PurchaseService } from '../../shared/services/purchase.service';
+import { RaffleService } from '../../shared/services/raffle.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-
+import { Raffle } from '../../models/raffle.model';
+import { Purchase } from '../../models/purchase';
+import { switchMap } from 'rxjs/operators';
+import { trigger, transition, style, animate } from '@angular/animations';
 @Component({
   selector: 'app-landing-page',
   templateUrl: './landing-page.component.html',
@@ -46,13 +49,15 @@ export class LandingPageComponent implements OnInit {
   ticketQuantity: number = 1;
   totalAmount: number = 0;
   selectedFile: File | null = null;
+  imagePreview: string | null = null;
   TICKET_PRICE: number = 0;
   MAX_TICKETS: number = 0;
   selectedBankIndex: number = 0;
   isMobileMenuOpen: boolean = false;
-  raffleData: RaffleData | null = null;
+  raffleData: Raffle | null = null;
   isLoading: boolean = true;
   error: string | null = null;
+  currentYear = new Date().getFullYear();
 
   banks: any[] = [];
 
@@ -81,21 +86,24 @@ export class LandingPageComponent implements OnInit {
 
   private loadRaffleData(guid: string): void {
     this.isLoading = true;
-    this.raffleService.getRaffleByGuid(guid).subscribe({
-      next: (data: RaffleData) => {
-        this.raffleData = data;
-        this.TICKET_PRICE = data.ticketPrice;
-        this.MAX_TICKETS = data.maxTickets;
-        this.banks = data.banks;
-        this.calculateTotal();
-        this.isLoading = false;
+    this.raffleService.getRaffleById(guid).then((data: Raffle | null) => {
+        if (data) {
+          this.raffleData = data;
+          this.TICKET_PRICE = data.ticketPrice;
+          this.MAX_TICKETS = data.maxTickets;
+          this.banks = data.banks;
+          this.calculateTotal();
+          this.isLoading = false;
+        } else {
+          this.showError('No se encontró la rifa');
+          this.isLoading = false;
+        }
       },
-      error: (error) => {
-        this.error = 'Error al cargar los datos de la rifa';
-        this.showError(this.error);
+      (error) => {
+        this.showError('Error al cargar los datos de la rifa');
         this.isLoading = false;
       }
-    });
+    );
   }
 
   calculateTotal(): void {
@@ -106,6 +114,12 @@ export class LandingPageComponent implements OnInit {
     const file = event.target.files[0];
     if (file) {
       this.selectedFile = file;
+      // Crear vista previa de la imagen
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.imagePreview = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
   }
 
@@ -116,12 +130,12 @@ export class LandingPageComponent implements OnInit {
     }
 
     if (this.purchaseForm.valid && this.selectedFile) {
-      const formData: PurchaseFormData = {
+      const formData = {
         ...this.purchaseForm.value,
         ticketQuantity: this.ticketQuantity,
         totalAmount: this.totalAmount,
         selectedBank: this.banks[this.selectedBankIndex].name,
-        paymentProof: this.selectedFile
+        raffleId: this.raffleData.id
       };
       
       const validationErrors = this.purchaseService.validateForm(formData);
@@ -130,8 +144,14 @@ export class LandingPageComponent implements OnInit {
         return;
       }
 
-      this.purchaseService.submitPurchase(formData).subscribe({
-        next: (response) => {
+      // Primero creamos la compra
+      this.purchaseService.submitPurchase(formData).pipe(
+        // Luego subimos el archivo y actualizamos la compra
+        switchMap(purchaseId => 
+          this.purchaseService.uploadPaymentProof(purchaseId, this.selectedFile!)
+        )
+      ).subscribe({
+        next: (url) => {
           this.showSuccess('¡Compra realizada con éxito!');
           this.resetForm();
         },
